@@ -13,6 +13,8 @@ import CoreLocation
 class MapVC: UIViewController, UIGestureRecognizerDelegate {
 
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var pullUpView: UIView!
+    @IBOutlet weak var pullUpViewHeightConstraint: NSLayoutConstraint!
     
     //    Instanciating CL location manager
     var locationManager = CLLocationManager()
@@ -20,6 +22,11 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
     let authorizationStatus = CLLocationManager.authorizationStatus()
     //    Radius of map center radius in meters
     let regionRadius: Double = 1000
+    //    Activity indicator
+    var spinner: UIActivityIndicatorView?
+    //    Lable to indicate progress of downloading photos
+    var progressLbl: UILabel?
+    var screenSize = UIScreen.main.bounds
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,7 +46,38 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         mapView.addGestureRecognizer(doubleTap)
         
     }
+    
+    func addSwipe() {
+        //        create UISwipeGestureRe3cognizer to close photo view
+        let swipe = UISwipeGestureRecognizer(target: self, action: #selector (animateViewDown))
+        swipe.direction = .down
+        //        add the gesture recognizer to the pull up view to actually be able to use it
+        pullUpView.addGestureRecognizer(swipe)
+    }
 
+    @objc func animateViewDown() {
+        pullUpViewHeightConstraint.constant = 0
+        UIView.animate(withDuration: 0.3) {
+            self.view.layoutIfNeeded()
+        }
+    }
+    
+    func addSpinner() {
+        spinner = UIActivityIndicatorView()
+        spinner?.center = CGPoint(x: (screenSize.width / 2) - ((spinner?.frame.width)! / 2), y: 150)
+        spinner?.color = #colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)
+        spinner?.startAnimating()
+        pullUpView.addSubview(spinner!)
+    }
+    
+    func animateViewUp() {
+        pullUpViewHeightConstraint.constant = 300
+        //        re-draws the layout after constraint change
+        UIView.animate(withDuration: 0.3) {
+            self.view.layoutIfNeeded()
+        }
+    }
+    
     @IBAction func centerMApBtnWasPressed(_ sender: Any) {
         if authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
             centerMapOnUserLocation()
@@ -74,6 +112,9 @@ extension MapVC: MKMapViewDelegate {
     @objc func dropPin(sender: UITapGestureRecognizer) {
         //        remove previous pins
         removePin()
+        animateViewUp()
+        addSwipe()
+        addSpinner()
         //        create touch point to get coordinates of touch on map
         let touchPoint = sender.location(in: mapView)
         //        convert touchPoint to GPS coordinate to pass into Flickr API
