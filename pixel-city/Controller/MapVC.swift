@@ -22,11 +22,17 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
     let authorizationStatus = CLLocationManager.authorizationStatus()
     //    Radius of map center radius in meters
     let regionRadius: Double = 1000
+    
     //    Activity indicator
     var spinner: UIActivityIndicatorView?
     //    Lable to indicate progress of downloading photos
     var progressLbl: UILabel?
     var screenSize = UIScreen.main.bounds
+    
+    //    Collection view for photos created programatically
+    var collectionView: UICollectionView?
+    //    Flow layout must be added when adding collection view programatically
+    var flowLayout = UICollectionViewFlowLayout()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,6 +40,14 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         locationManager.delegate = self as CLLocationManagerDelegate
         configureLocationServices()
         addDoubleTap()
+        
+        //        set-up collection view
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: flowLayout)
+        //        register a cell for collection view to use
+        collectionView?.register(PhotoCell.self, forCellWithReuseIdentifier: "photoCell")
+        collectionView?.delegate = self
+        collectionView?.dataSource = self
+        pullUpView.addSubview(collectionView!)
     }
     
     func addDoubleTap() {
@@ -67,7 +81,29 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         spinner?.center = CGPoint(x: (screenSize.width / 2) - ((spinner?.frame.width)! / 2), y: 150)
         spinner?.color = #colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)
         spinner?.startAnimating()
-        pullUpView.addSubview(spinner!)
+        collectionView?.addSubview(spinner!)
+    }
+    
+    func removeSpinner() {
+        if spinner != nil {
+            //        if there is a spinner
+            spinner?.removeFromSuperview()
+        }
+    }
+    
+    func addProgressLbl() {
+        progressLbl = UILabel()
+        progressLbl?.frame = CGRect(x: (screenSize.width / 2) - 120, y: 175, width: 240, height: 40)
+        progressLbl?.font = UIFont(name: "Avenir Next", size: 18)
+        progressLbl?.textColor = #colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)
+        progressLbl?.textAlignment = .center
+        collectionView?.addSubview(progressLbl!)
+    }
+    
+    func removeProgressLbl() {
+        if progressLbl != nil {
+            progressLbl?.removeFromSuperview()
+        }
     }
     
     func animateViewUp() {
@@ -112,9 +148,13 @@ extension MapVC: MKMapViewDelegate {
     @objc func dropPin(sender: UITapGestureRecognizer) {
         //        remove previous pins
         removePin()
+        removeSpinner()
+        removeProgressLbl()
+        
         animateViewUp()
         addSwipe()
         addSpinner()
+        addProgressLbl()
         //        create touch point to get coordinates of touch on map
         let touchPoint = sender.location(in: mapView)
         //        convert touchPoint to GPS coordinate to pass into Flickr API
@@ -149,6 +189,22 @@ extension MapVC: CLLocationManagerDelegate {
     //    called whenever location services auth. is changed
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         centerMapOnUserLocation()
+    }
+}
+
+extension MapVC: UICollectionViewDelegate, UICollectionViewDataSource {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 1
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        //        number of items in array
+        return 4
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "photoCell", for: indexPath) as? PhotoCell
+        return cell!
     }
 }
 
