@@ -155,6 +155,7 @@ extension MapVC: MKMapViewDelegate {
         addSwipe()
         addSpinner()
         addProgressLbl()
+        
         //        create touch point to get coordinates of touch on map
         let touchPoint = sender.location(in: mapView)
         //        convert touchPoint to GPS coordinate to pass into Flickr API
