@@ -55,6 +55,9 @@ class MapVC: UIViewController, UIGestureRecognizerDelegate {
         collectionView?.delegate = self
         collectionView?.dataSource = self
         collectionView?.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)
+        
+        registerForPreviewing(with: self, sourceView: collectionView!)
+        
         pullUpView.addSubview(collectionView!)
     }
     
@@ -293,5 +296,33 @@ extension MapVC: UICollectionViewDelegate, UICollectionViewDataSource {
         //        Present the VC
         present(popVC, animated: true, completion: nil)
     }
+}
+
+extension MapVC: UIViewControllerPreviewingDelegate{
+    //    What happens when you push all the way -> present the view controller
+    func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
+        //        Tell it where we will press so it knows how to animate
+        //        Creating multiple constants in same guard statement
+        //        As return statement is optional (func header) can return nil and not instance
+        guard let indexPath = collectionView?.indexPathForItem(at: location), let cell = collectionView?.cellForItem(at: indexPath) else {return nil}
+        
+        guard let popVc = storyboard?.instantiateViewController(withIdentifier: "PopVC") as? PopVC else {return nil}
+        
+        popVc.initData(forImage: imageArray[indexPath.row])
+        
+        //        Setting-up size of rectangle of photo
+        previewingContext.sourceRect = cell.contentView.frame
+        return popVc
+    }
+    
+    //    What happens when you peek (only push a little bit)
+    func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
+        //        Tell which VC it should commit
+        //        viewControllerToCommit = the VC set-up in above func (popVC)
+        show(viewControllerToCommit, sender: self)
+        
+    }
+    
+    
 }
 
